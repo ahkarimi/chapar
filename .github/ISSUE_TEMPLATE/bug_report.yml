@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a reproducible problem in Chapar
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Chapar. Remove secrets and personal data from logs before posting.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Tag, branch, or commit hash where the problem occurs.
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Telegram bot
+        - FastAPI service
+        - Celery worker or scheduler
+        - Docker deployment
+        - Chart generation
+        - LLM or news integration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: Tell us the smallest sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized logs
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Windows/Linux/macOS, Python version, Docker version
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed API keys, tokens, user data, and other secrets.
+          required: true
+        - label: This is not a security vulnerability; I will report security issues privately as described in SECURITY.md.
+          required: true

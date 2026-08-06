@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+pythonpath = ["bot", "chartist"]
+asyncio_mode = "auto"
+testpaths = ["bot", "chartist/app/test_units"]
+markers = [
+    "integration: requires external infrastructure such as PostgreSQL",
+]

@@ -1,0 +1,10 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Environment variable file
+.env
+
+# Other files to ignore
+*.log
+*.sqlite3

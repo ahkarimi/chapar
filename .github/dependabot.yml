@@ -1,0 +1,37 @@
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      python-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker-compose
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      compose-images:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directories:
+      - "/bot"
+      - "/chartist"
+    schedule:
+      interval: monthly
+    groups:
+      python-base-images:
+        patterns: ["*"]

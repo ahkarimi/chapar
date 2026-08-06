@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a focused improvement with a clear user benefit
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What user need or limitation would this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful version of the change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Would you like to implement it?
+      options:
+        - Yes
+        - Maybe, with guidance
+        - No
+    validations:
+      required: true

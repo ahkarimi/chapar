@@ -1,0 +1,185 @@
+name: chapar
+
+services:
+  # Your PostgreSQL Database
+  chart_postgres:
+    image: postgres:15-alpine
+    container_name: chart_postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_TELEGRAM_DB: ${POSTGRES_TELEGRAM_DB}
+    networks:
+      - backend_network # Only accessible internally
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    command: postgres -c max_connections=200 -c shared_buffers=512MB
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+
+  #
+  chart_redis:
+    image: redis:6-alpine
+    container_name: chart_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend_network # Only accessible internally
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: redis-server --maxmemory 768mb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+
+  chart_fastapi:
+    build:
+      context: .
+      dockerfile: chartist/Dockerfile
+    container_name: chart_fastapi
+    env_file:
+      - ${ENV_FILE:-.env}
+    depends_on:
+      chart_postgres:
+        condition: service_healthy # Wait for DB to be ready
+      chart_redis:
+        condition: service_healthy # Wait for Redis to be ready
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Internal port 8000 is exposed, but ONLY to other containers in the network
+    # It's NOT mapped to the host here. Nginx will access it via the network.
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+
+  # Celery Workers for handling analysis tasks
+  chart_celery_worker:
+    build:
+      context: .
+      dockerfile: chartist/Dockerfile
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      - SERVICE_TYPE=worker
+    depends_on:
+      chart_postgres:
+        condition: service_healthy
+      chart_redis:
+        condition: service_healthy
+    networks:
+      - backend_network
+    restart: unless-stopped
+    # Scale to multiple workers if needed
+    deploy:
+      mode: replicated
+      replicas: 2  # Reduced from 3 to 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 0.75G
+
+  # Celery Beat Scheduler (optional, for periodic tasks)
+  chart_celery_beat:
+    build:
+      context: .
+      dockerfile: chartist/Dockerfile
+    container_name: chart_celery_beat
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      - SERVICE_TYPE=beat
+    depends_on:
+      chart_postgres:
+        condition: service_healthy
+      chart_redis:
+        condition: service_healthy
+    networks:
+      - backend_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 0.5G
+
+  # Your Telegram Bot
+  chart_bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    container_name: chart_bot
+    env_file:
+      - ${ENV_FILE:-.env}
+    depends_on:
+      chart_postgres:
+        condition: service_healthy # Wait for DB to be ready
+      chart_redis:
+        condition: service_healthy # Wait for Redis to be ready
+      chart_fastapi:
+        condition: service_healthy
+    networks:
+      - backend_network # Can talk to FastAPI, Postgres, Redis via service names
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 0.5G
+
+  # Nginx Reverse Proxy
+  nginx_proxy:
+    image: nginx:latest
+    container_name: chart_nginx
+    ports:
+      # Expose port 80 on the host, mapping to port 80 in the Nginx container
+      - "8001:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Mount custom config read-only
+    depends_on:
+      chart_fastapi:
+        condition: service_healthy
+    networks:
+      # Needs access to the network where fastapi_service is
+      - backend_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 0.25G
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  backend_network: # Custom network for your application components
+    driver: bridge
