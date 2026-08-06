@@ -7,7 +7,9 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Status: Alpha](https://img.shields.io/badge/status-alpha-orange)
 
-![Chapar Telegram Bot Demo](docs/images/demo.gif)
+<p align="center">
+  <img src="docs/images/demo.gif" width="50%" alt="Chapar Telegram Bot Demo" />
+</p>
 
 > *"Nothing mortal travels so fast as these Persian messengers."* — Herodotus
 
