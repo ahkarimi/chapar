@@ -3,7 +3,7 @@ name: chapar
 services:
   # Your PostgreSQL Database
   chart_postgres:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     container_name: chart_postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -31,7 +31,7 @@ services:
 
   #
   chart_redis:
-    image: redis:6-alpine
+    image: redis:8-alpine
     container_name: chart_redis
     volumes:
       - redis_data:/data
